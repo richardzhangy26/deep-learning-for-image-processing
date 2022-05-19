@@ -6,7 +6,7 @@ import onnx
 import onnxruntime
 import numpy as np
 from model import resnet34
-
+# adasd
 device = torch.device("cpu")
 
 

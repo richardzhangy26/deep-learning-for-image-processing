@@ -44,7 +44,7 @@ class SegmentationPresetEval:
 
 
 def get_transform(train, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
-    base_size = 565
+    base_size = 512
     crop_size = 480
 
     if train:
@@ -168,7 +168,7 @@ def parse_args():
     # exclude background
     parser.add_argument("--num-classes", default=1, type=int)
     parser.add_argument("--device", default="cuda", help="training device")
-    parser.add_argument("-b", "--batch-size", default=4, type=int)
+    parser.add_argument("-b", "--batch-size", default=1, type=int)
     parser.add_argument("--epochs", default=200, type=int, metavar="N",
                         help="number of total epochs to train")
 

@@ -4,6 +4,7 @@ import os
 import datetime
 
 import torch
+from torch.utils import data
 import numpy as np
 
 import transforms
@@ -46,7 +47,7 @@ def main(args):
 
     # 用来保存coco_info的文件
     now = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    key_results_file = f"key_results{now}.txt"
+    key_results_file = f"results{now}.txt"
 
     with open(args.keypoints_path, "r") as f:
         person_kps_info = json.load(f)
@@ -84,24 +85,24 @@ def main(args):
 
     print("Creating data loaders")
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset)
+        train_sampler = data.distributed.DistributedSampler(train_dataset)
+        test_sampler = data.distributed.DistributedSampler(val_dataset)
     else:
-        train_sampler = torch.utils.data.RandomSampler(train_dataset)
-        test_sampler = torch.utils.data.SequentialSampler(val_dataset)
+        train_sampler = data.RandomSampler(train_dataset)
+        test_sampler = data.SequentialSampler(val_dataset)
 
-    train_batch_sampler = torch.utils.data.BatchSampler(train_sampler, args.batch_size, drop_last=True)
+    train_batch_sampler = data.BatchSampler(train_sampler, args.batch_size, drop_last=True)
 
-    data_loader = torch.utils.data.DataLoader(train_dataset,
-                                              batch_sampler=train_batch_sampler,
-                                              num_workers=args.workers,
-                                              collate_fn=train_dataset.collate_fn)
+    data_loader = data.DataLoader(train_dataset,
+                                  batch_sampler=train_batch_sampler,
+                                  num_workers=args.workers,
+                                  collate_fn=train_dataset.collate_fn)
 
-    data_loader_test = torch.utils.data.DataLoader(val_dataset,
-                                                   batch_size=args.batch_size,
-                                                   sampler=test_sampler,
-                                                   num_workers=args.workers,
-                                                   collate_fn=train_dataset.collate_fn)
+    data_loader_test = data.DataLoader(val_dataset,
+                                       batch_size=args.batch_size,
+                                       sampler=test_sampler,
+                                       num_workers=args.workers,
+                                       collate_fn=train_dataset.collate_fn)
 
     print("Creating model")
     # create model num_classes equal background + classes
@@ -218,7 +219,7 @@ if __name__ == "__main__":
     parser.add_argument('--keypoints-path', default="./person_keypoints.json", type=str,
                         help='person_keypoints.json path')
     # 原项目提供的验证集person检测信息，如果要使用GT信息，直接将该参数置为None，建议设置成None
-    parser.add_argument('--person-det', type=str, default="./COCO_val2017_detections_AP_H_56_person.json")
+    parser.add_argument('--person-det', type=str, default=None)
     parser.add_argument('--fixed-size', default=[256, 192], nargs='+', type=int, help='input size')
     # 检测目标类别数(不包含背景)
     parser.add_argument('--num-joints', default=17, type=int, help='num_joints(num_keypoints)')
@@ -226,16 +227,16 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--batch-size', default=32, type=int,
                         help='images per gpu, the total batch size is $NGPU x batch_size')
     # 指定接着从哪个epoch数开始训练
-    parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
+    parser.add_argument('--start-epoch', default=0, type=int, help='start epoch')
     # 训练的总epoch数
     parser.add_argument('--epochs', default=210, type=int, metavar='N',
                         help='number of total epochs to run')
     # 数据加载以及预处理的线程数
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 4)')
-    # 学习率，这个需要根据gpu的数量以及batch_size进行设置0.032 / bs * num_GPU
-    parser.add_argument('--lr', default=0.004, type=float,
-                        help='initial learning rate, 0.004 is the default value for training '
+    # 学习率
+    parser.add_argument('--lr', default=0.001, type=float,
+                        help='initial learning rate, 0.001 is the default value for training '
                              'on 4 gpus and 32 images_per_gpu')
     # AdamW的weight_decay参数
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
@@ -258,9 +259,9 @@ if __name__ == "__main__":
     parser.add_argument('--world-size', default=4, type=int,
                         help='number of distributed processes')
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
-    parser.add_argument("--sync-bn", dest="sync_bn", help="Use sync batch norm", type=bool, default=False)
+    parser.add_argument("--sync-bn", action="store_true", help="Use sync batch norm")
     # 是否使用混合精度训练(需要GPU支持混合精度)
-    parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
+    parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
     args = parser.parse_args()
 

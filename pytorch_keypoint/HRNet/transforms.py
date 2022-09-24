@@ -1,4 +1,3 @@
-import json
 import math
 import random
 from typing import Tuple
@@ -70,8 +69,6 @@ def get_final_preds(batch_heatmaps: torch.Tensor,
     heatmap_height = batch_heatmaps.shape[2]
     heatmap_width = batch_heatmaps.shape[3]
 
-    # import time
-    # t1 = time.time()
     # post-processing
     if post_processing:
         for n in range(coords.shape[0]):
@@ -87,12 +84,7 @@ def get_final_preds(batch_heatmaps: torch.Tensor,
                         ]
                     ).to(batch_heatmaps.device)
                     coords[n][p] += torch.sign(diff) * .25
-        # new_coords = torch.floor(coords + 0.5)
-        # mask_x = 1 < new_coords[:, 0] < heatmap_width - 1
-        # mask_y = 1 < new_coords[:, 1] < heatmap_height - 1
-        # mask = torch.bitwise_and(mask_x, mask_y)
 
-    # print(time.time() - t1)
     preds = coords.clone().cpu().numpy()
 
     # Transform back
@@ -290,7 +282,7 @@ class AffineTransform(object):
         self.fixed_size = fixed_size
 
     def __call__(self, img, target):
-        src_xmin, src_ymin, src_xmax, src_ymax = adjust_box(*target["box"], self.fixed_size)
+        src_xmin, src_ymin, src_xmax, src_ymax = adjust_box(*target["box"], fixed_size=self.fixed_size)
         src_w = src_xmax - src_xmin
         src_h = src_ymax - src_ymin
         src_center = np.array([(src_xmin + src_xmax) / 2, (src_ymin + src_ymax) / 2])

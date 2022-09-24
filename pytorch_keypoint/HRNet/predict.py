@@ -4,10 +4,16 @@ import json
 import torch
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 
 from model import HighResolutionNet
 from draw_utils import draw_keypoints
 import transforms
+
+
+def predict_all_person():
+    # TODO
+    pass
 
 
 def predict_single_person():
@@ -36,7 +42,7 @@ def predict_single_person():
     # read single-person image
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img_tensor, target = data_transform(img, {"box": [0, 0, img.shape[1], img.shape[0]]})
+    img_tensor, target = data_transform(img, {"box": [0, 0, img.shape[1] - 1, img.shape[0] - 1]})
     img_tensor = torch.unsqueeze(img_tensor, dim=0)
 
     # create model
@@ -67,6 +73,8 @@ def predict_single_person():
         scores = np.squeeze(scores)
 
         plot_img = draw_keypoints(img, keypoints, scores, thresh=0.2, r=3)
+        plt.imshow(plot_img)
+        plt.show()
         plot_img.save("test_result.jpg")
 
 
